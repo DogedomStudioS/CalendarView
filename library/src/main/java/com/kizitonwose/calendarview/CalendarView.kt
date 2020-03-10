@@ -16,6 +16,22 @@ import org.threeten.bp.YearMonth
 
 
 open class CalendarView : RecyclerView {
+    private var mRequestedLayout = false
+
+    @SuppressLint("WrongCall")
+    override fun requestLayout() {
+        super.requestLayout()
+        // We need to intercept this method because if we don't our children will never update
+        // Check https://stackoverflow.com/questions/49371866/recyclerview-wont-update-child-until-i-scroll
+        if (!mRequestedLayout) {
+            mRequestedLayout = true
+            post {
+                mRequestedLayout = false
+                layout(left, top, right, bottom)
+                this.onLayout(false, left, top, right, bottom)
+            }
+        }
+    }
 
     /**
      * The [DayBinder] instance used for managing day cell views
@@ -486,6 +502,7 @@ open class CalendarView : RecyclerView {
      * at this position. Use this to reload a date cell on the Calendar.
      */
     fun notifyDayChanged(day: CalendarDay) {
+      mRequestedLayout = false
         calendarAdapter.reloadDay(day)
     }
 
@@ -505,6 +522,7 @@ open class CalendarView : RecyclerView {
      * [MonthHeaderFooterBinder.bind] will be called for this month's footer view if available.
      */
     fun notifyMonthChanged(month: YearMonth) {
+      mRequestedLayout = false
         calendarAdapter.reloadMonth(month)
     }
 
@@ -513,6 +531,7 @@ open class CalendarView : RecyclerView {
      * Essentially calls [RecyclerView.Adapter.notifyDataSetChanged] on the adapter.
      */
     fun notifyCalendarChanged() {
+      mRequestedLayout = false
         calendarAdapter.notifyDataSetChanged()
     }
 
